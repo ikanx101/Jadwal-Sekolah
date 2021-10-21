@@ -88,7 +88,22 @@ panel1 = tabItem(tabName = 'program',
                  ),
                  fluidRow(
                    column(width = 3,
-                          textOutput("stat"))
+                          h2("Status Algoritma"),
+                          h4("Jika algoritma berhasil menemukan jadwal, maka akan keluar output: OPTIMAL. Sebaliknya, jika tidak ditemukan akan keluar output INFEASIBLE."),
+                          h4("Status:"),
+                          textOutput("stat"),
+                          br(),
+                          h4("Masukkan dimensi untuk export kalendar ke file png!"),
+                          h5("Pastikan hanya angka yang Anda masukkan. Satuan yang digunakan adalah `inch`."),
+                          h5("Kalau bingung, bisa dicoba tinggi = 6 dan lebar = 9"),
+                          textInput("tinggi","Masukkan height:"),
+                          textInput("lebar","Masukkan width:"),
+                          downloadButton("downloadPlot", "Download Kalendar")
+                          ),
+                   column(width = 9,
+                          box(width = 12,
+                              plotOutput("kalendar",height = 600))
+                          )
                  )
 )
         
@@ -182,8 +197,67 @@ server <- function(input, output, session) {
       model_sol()$status %>% print()
     })
     
+    output$kalendar = renderPlot({
+      rekap = 
+        model_sol() %>% 
+        get_solution(x[i,j]) %>%
+        filter(value == 1) %>%
+        rename(siswa = i,
+               hari = j)
+      
+      rekap %>% 
+        ggplot(aes(x = as.factor(hari), 
+                   y = as.factor(siswa))) +
+        geom_tile(color = "white",
+                  fill = 'steelblue',
+                  alpha = .5) +
+        theme_minimal() +
+        labs(y = "Siswa ke -",
+             x = "Hari ke -",
+             title = "Kalendar Kunjungan Siswa",
+             subtitle = "Dibuat dengan algoritma optimisasi binary programming",
+             caption = "Dibuat dengan R\nikanx101.com") +
+        theme(plot.title = element_text(size = 25,face = "bold"),
+              plot.subtitle = element_text(size = 20,face = "bold"),
+              axis.title = element_text(size = 18,face = "bold"),
+              axis.text = element_text(size = 15))
+    })
     
+    plotInput = function() {
+      rekap = 
+        model_sol() %>% 
+        get_solution(x[i,j]) %>%
+        filter(value == 1) %>%
+        rename(siswa = i,
+               hari = j)
+      
+      rekap %>% 
+        ggplot(aes(x = as.factor(hari), 
+                   y = as.factor(siswa))) +
+        geom_tile(color = "white",
+                  fill = 'steelblue',
+                  alpha = .5) +
+        theme_minimal() +
+        labs(y = "Siswa ke -",
+             x = "Hari ke -",
+             title = "Kalendar Kunjungan Siswa",
+             subtitle = "Dibuat dengan algoritma optimisasi binary programming",
+             caption = "Dibuat dengan R\nikanx101.com") +
+        theme(plot.title = element_text(size = 25,face = "bold"),
+              plot.subtitle = element_text(size = 20,face = "bold"),
+              axis.title = element_text(size = 18,face = "bold"),
+              axis.text = element_text(size = 15))
+    }
     
+    output$downloadPlot = downloadHandler(
+      filename = 'Kalendar.png',
+      content = function(file) {
+        device <- function(..., width, height) {
+          grDevices::png(..., width = as.numeric(input$lebar), height = as.numeric(input$tinggi),
+                         res = 900, units = "in")
+        }
+        ggsave(file, plot = plotInput(), device = device)
+      })
 }
 
 

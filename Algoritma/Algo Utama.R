@@ -63,3 +63,10 @@ rekap %>%
   ungroup() %>%
   rename("jumlah kehadiran" = n) %>%
   knitr::kable("simple",caption = "Rekap Presensi Siswa")
+
+
+library(ggplot2)
+rekap %>% 
+  ggplot(aes(x = as.factor(hari), 
+             y = as.factor(siswa))) +
+  geom_tile()
